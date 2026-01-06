@@ -1,6 +1,11 @@
 # Sched_ext Schedulers and Tools
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sched-ext/scx)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sched-ext/scx-c-examples)
+
+**IMPORTANT**: This repository includes example schedulers used for illustration purposes, or as a jumping-off point for 
+prototyping. The definitive versions of all chedulers in this repository are in the upstream kernel under the `tools/sched_ext`
+directory. Please do not submit PRs for new features for the schedulers here. If you find any issues or bugs, please
+submit a patchset in the upstream sched\_ext mailing list.
 
 [`sched_ext`](https://github.com/sched-ext/scx) is a Linux kernel feature
 which enables implementing kernel thread schedulers in BPF and dynamically
@@ -101,19 +106,14 @@ are provided for select distros.
 ```
 scx
 |-- scheds               : Sched_ext scheduler implementations
-|   |-- include          : Shared BPF and user C include files including vmlinux.h
+|   |-- include          : Shared BPF and user C include files
+|   |-- vmlinux          : vmlinux.h header
 |   |-- c                : Example schedulers - userspace code written C
-|   \-- rust             : Example schedulers - userspace code written Rust
-\-- rust                 : Rust support code
-    \-- scx_utils        : Common utility library for Rust schedulers
 ```
 
 ## Build & Install
 
-This repository provides two build systems:
-
-- **C schedulers**: Use `make`
-- **Rust schedulers**: Use `cargo`
+Use `make` to build all the schedulers in this repo.
 
 **Dependencies:**
 
@@ -122,7 +122,6 @@ This repository provides two build systems:
 - `bpftool`: Usually available in `linux-tools-common` or similar packages
 - `libelf`, `libz`, `libzstd`: For linking against libbpf
 - `pkg-config`: For finding system libraries
-- `Rust` toolchain: >=1.82
 
 The kernel has to be built with the following configuration:
 
@@ -139,47 +138,19 @@ You can append its contents to your kernel `.config` file to enable the necessar
 
 ### Building and Installing
 
-#### C Schedulers
-
 ```shell
 $ cd $SCX
 $ make all                          # Build all C schedulers
 $ make install INSTALL_DIR=~/bin    # Install to custom directory
 ```
 
-#### Rust Schedulers
-
-```shell
-$ cd $SCX
-$ cargo build --release                 # Build all Rust schedulers
-$ cargo build --release -p scx_rusty    # Build specific scheduler
-```
-
-Rust schedulers are also published on `crates.io`:
-
-```shell
-$ cargo install scx_rusty
-```
-
-See: [CARGO BUILD](CARGO_BUILD.md)
-
-### Binary Locations
-
-- **C schedulers**: `build/scheds/c/scx_simple`
-- **Rust schedulers**: `target/release/scx_rusty`
+Binary location is `build/scheds/c/scx_simple`
 
 ### Environment Variables
 
 Both `make` and `cargo` support these environment variables for BPF compilation:
 
 - `BPF_CLANG`: The clang command to use. (Default: `clang`)
-- `BPF_CFLAGS`: Override all compiler flags for BPF compilation
-- `BPF_BASE_CFLAGS`: Override base compiler flags (non-include)
-- `BPF_EXTRA_CFLAGS_PRE_INCL`: Extra flags before include paths
-- `BPF_EXTRA_CFLAGS_POST_INCL`: Extra flags after include paths
-
-C schedulers only:
-
 - `BPFTOOL`: The bpftool command to use. (Default: `bpftool`)
 - `CC`: The C compiler to use. (Default: `cc`)
 
@@ -216,93 +187,11 @@ $ scx_bpfland --monitor 0.5
 Some schedulers may implement different or multiple monitoring options. Refer to `--help` of each scheduler for details.
 Most schedulers also accept `--stats $INTERVAL` to print the statistics directly from the scheduling instance.
 
-#### Examples
-
-- `scx_bpfland`
-
-```shell
-$ scx_bpfland --monitor 5
-[scx_bpfland] tasks -> run:  3/4  int: 2  wait: 3    | nvcsw: 3    | dispatch -> dir: 0     prio: 73    shr: 9
-[scx_bpfland] tasks -> run:  4/4  int: 2  wait: 2    | nvcsw: 3    | dispatch -> dir: 1     prio: 3498  shr: 1385
-[scx_bpfland] tasks -> run:  4/4  int: 2  wait: 2    | nvcsw: 3    | dispatch -> dir: 1     prio: 2492  shr: 1311
-[scx_bpfland] tasks -> run:  4/4  int: 2  wait: 3    | nvcsw: 3    | dispatch -> dir: 2     prio: 3270  shr: 1748
-```
-
-- `scx_rusty`
-
-```shell
-$ scx_rusty --monitor 5
-###### Thu, 29 Aug 2024 14:42:37 +0200, load balance @  -265.1ms ######
-cpu=   0.00 load=    0.17 mig=0 task_err=0 lb_data_err=0 time_used= 0.0ms
-tot=     15 sync_prev_idle= 0.00 wsync= 0.00
-prev_idle= 0.00 greedy_idle= 0.00 pin= 0.00
-dir= 0.00 dir_greedy= 0.00 dir_greedy_far= 0.00
-dsq=100.00 greedy_local= 0.00 greedy_xnuma= 0.00
-kick_greedy= 0.00 rep= 0.00
-dl_clamp=33.33 dl_preset=93.33
-slice=20000us
-direct_greedy_cpus=f
-  kick_greedy_cpus=f
-  NODE[00] load=  0.17 imbal=  +0.00 delta=  +0.00
-   DOM[00] load=  0.17 imbal=  +0.00 delta=  +0.00
-```
-
-- `scx_lavd`
-
-```shell
-$ scx_lavd --monitor 5
-|       12 |      1292 |         3 |         1 |      8510 |   37.6028 |   2.42068 |  99.1304 |      100 |  62.8907 |      100 |      100 |  62.8907 | performance |          100 |            0 |            0 |
-|       13 |      2208 |         3 |         1 |      6142 |   33.3442 |   2.39336 |  98.7626 |      100 |  60.2084 |      100 |      100 |  60.2084 | performance |          100 |            0 |            0 |
-|       14 |       941 |         3 |         1 |      5223 |    31.323 |     1.704 |   99.215 |  100.019 |  59.1614 |      100 |  100.019 |  59.1614 | performance |          100 |            0 |            0 |
-```
-
-- `scx_rustland`
-
-```shell
-$ scx_rustland --monitor 5
-[RustLand] tasks -> r:  1/4  w: 3 /3  | pf: 0     | dispatch -> u: 4     k: 0     c: 0     b: 0     f: 0     | cg: 0
-[RustLand] tasks -> r:  1/4  w: 2 /2  | pf: 0     | dispatch -> u: 28385 k: 0     c: 0     b: 0     f: 0     | cg: 0
-[RustLand] tasks -> r:  0/4  w: 4 /0  | pf: 0     | dispatch -> u: 25288 k: 0     c: 0     b: 0     f: 0     | cg: 0
-[RustLand] tasks -> r:  0/4  w: 2 /0  | pf: 0     | dispatch -> u: 30580 k: 0     c: 0     b: 0     f: 0     | cg: 0
-[RustLand] tasks -> r:  0/4  w: 2 /0  | pf: 0     | dispatch -> u: 30824 k: 0     c: 0     b: 0     f: 0     | cg: 0
-[RustLand] tasks -> r:  1/4  w: 1 /1  | pf: 0     | dispatch -> u: 33178 k: 0     c: 0     b: 0     f: 0     | cg: 0
-```
-
-## Kernel Feature Status
-
-The kernel feature is not yet upstream and can be found in the
-[`sched_ext`](https://github.com/sched-ext/sched_ext) repository. The
-following are important branches:
-
-- [`sched_ext`](https://github.com/sched-ext/sched_ext): The main development
-  branch. This branch periodically pulls from the
-  [bpf-next](https://git.kernel.org/pub/scm/linux/kernel/git/bpf/bpf-next.git/)
-  tree to stay in sync with the kernel and BPF developments.
-- `sched_ext-release-*`: `sched_ext` backports on top of released kernels. We
-  plan to maintain backports for a few recent kernel releases until
-  `sched_ext` is merged upstream. Currently maintained backports:
-  - [`sched_ext-release-v6.6`](https://github.com/sched-ext/sched_ext/tree/sched_ext-release-v6.6)
-- `sched_ext-vN`: Patchsets posted upstream. The `v4` LKML thread has
-  high-level discussions.
-  - [RFC](https://github.com/htejun/sched_ext):
-    [LMKL thread](http://lkml.kernel.org/r/20221130082313.3241517-1-tj@kernel.org)
-  - [`sched_ext-v2`](https://github.com/sched-ext/sched_ext/tree/sched_ext-v2):
-    [LKML thread](http://lkml.kernel.org/r/20230128001639.3510083-1-tj@kernel.org)
-  - [`sched_ext-v3`](https://github.com/sched-ext/sched_ext/tree/sched_ext-v3):
-    [LKML thread](http://lkml.kernel.org/r/20230317213333.2174969-1-tj@kernel.org)
-  - [`sched_ext-v4`](https://github.com/sched-ext/sched_ext/tree/sched_ext-v4):
-    [LKML thread](http://lkml.kernel.org/r/20230711011412.100319-1-tj@kernel.org)
-  - [`sched_ext-v5`](https://github.com/sched-ext/sched_ext/tree/sched_ext-v5):
-    [LKML thread](http://lkml.kernel.org/r/20231111024835.2164816-1-tj@kernel.org)
-
-## [Breaking Changes](./BREAKING_CHANGES.md)
-
-[A list of the breaking changes](./BREAKING_CHANGES.md) in the `sched_ext` kernel tree and the associated commits for the schedulers in this repo.
-
 ## [Developer Guide](./DEVELOPER_GUIDE.md)
 
 Want to learn how to develop a scheduler or find some useful tools for working
 with schedulers? See the developer guide for more details.
+
 
 ## Getting in Touch
 
