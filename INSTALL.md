@@ -15,7 +15,7 @@ $ sudo do-release-upgrade
 #### Setting up Dev Environment
 
 ```
-$ sudo apt install -y build-essential cmake cargo rustc clang llvm pkg-config libelf-dev protobuf-compiler libseccomp-dev libbpf-dev pahole
+$ sudo apt install -y build-essential cmake clang llvm pkg-config libelf-dev protobuf-compiler libseccomp-dev libbpf-dev pahole
 ```
 
 #### Build the scx schedulers from source
@@ -23,15 +23,13 @@ $ sudo apt install -y build-essential cmake cargo rustc clang llvm pkg-config li
 ```
 $ git clone https://github.com/sched-ext/scx.git
 $ cd scx
-$ make all                    # Build C schedulers
-$ cargo build --release       # Build Rust schedulers
+$ make all                    # Build schedulers
 ```
 
 #### Install the scx schedulers from source
 
 ```
 $ make install INSTALL_DIR=~/bin                                        # Install C schedulers
-$ ls -d scheds/rust/scx_* | xargs -I{} cargo install --path {}          # Install Rust schedulers
 ```
 
 ## Arch Linux
@@ -45,7 +43,7 @@ sudo pacman -S scx-scheds
 In addition to the packages from the previous step, install the following.
 
 ```
-$ sudo pacman -Sy cargo bpf pahole
+$ sudo pacman -Sy bpf pahole
 ```
 
 ## Gentoo Linux

@@ -10,18 +10,9 @@ jobs:
     uses: ./.github/workflows/build-kernels.yml
     secrets: inherit
 
-  integration-test:
-    uses: ./.github/workflows/integration-tests.yml
-    needs: build-kernels
-    secrets: inherit
-    with:
-      repo-name: stable/6_12
-
   notify-job:
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref == 'refs/heads/main' }}
-    needs:
-      - integration-test
     steps:
     - uses: actions/checkout@v2
     - name: Slack Notification

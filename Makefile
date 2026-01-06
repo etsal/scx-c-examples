@@ -23,7 +23,7 @@ sub-make:
 	@mkdir -p $(KBUILD_OUTPUT)
 	@$(MAKE) --no-print-directory -C $(KBUILD_OUTPUT) -f $(CURDIR)/Makefile \
 		ROOT_SRC_DIR=$(CURDIR) \
-		LIB_OBJ_DIR=$(KBUILD_OUTPUT)/lib SCHED_OBJ_DIR=$(KBUILD_OUTPUT)/scheds/c \
+		SCHED_OBJ_DIR=$(KBUILD_OUTPUT)/scheds/c \
 		$(MAKECMDGOALS)
 
 .PHONY: $(PHONY)
@@ -72,42 +72,30 @@ export LIBBPF_DEPS := $(LIBBPF_LIBS) -lelf -lz -lzstd
 export THREAD_DEPS := -lpthread
 
 export OBJ_DIR := $(CURDIR)
-ifeq ($(LIB_OBJ_DIR),)
-  export LIB_OBJ_DIR := $(ROOT_SRC_DIR)/lib
-endif
 ifeq ($(SCHED_OBJ_DIR),)
   export SCHED_OBJ_DIR := $(ROOT_SRC_DIR)/scheds/c
 endif
 
 # Scheduler lists for convenience targets
 C_SCHEDS := scx_simple scx_qmap scx_central scx_userland scx_nest scx_flatcg scx_pair scx_prev
-C_SCHEDS_LIB := scx_sdt
 
-all: lib scheds-c
+all: scheds-c
 
 # Individual scheduler targets
-$(C_SCHEDS) $(C_SCHEDS_LIB): lib
+$(C_SCHEDS):
 	@mkdir -p $(SCHED_OBJ_DIR)
 	@$(MAKE) -C $(ROOT_SRC_DIR)/scheds/c SRC_DIR=$(ROOT_SRC_DIR)/scheds/c $@
 
-$(LIB_OBJ_DIR) $(SCHED_OBJ_DIR):
-	@mkdir -p $@
-
-lib:
-	@mkdir -p $(LIB_OBJ_DIR)
-	@$(MAKE) -C $(ROOT_SRC_DIR)/lib SRC_DIR=$(ROOT_SRC_DIR)/lib
-
-scheds-c: lib
+scheds-c:
 	@mkdir -p $(SCHED_OBJ_DIR)
 	@$(MAKE) -C $(ROOT_SRC_DIR)/scheds/c SRC_DIR=$(ROOT_SRC_DIR)/scheds/c
 
 clean:
-	$(MAKE) -C $(ROOT_SRC_DIR)/lib clean
 	$(MAKE) -C $(ROOT_SRC_DIR)/scheds/c clean
 
 install: all
 	$(MAKE) -C $(ROOT_SRC_DIR)/scheds/c install
 
-.PHONY: all lib scheds-c clean install $(C_SCHEDS) $(C_SCHEDS_LIB)
+.PHONY: all scheds-c clean install $(C_SCHEDS)
 
 endif  # End of ifeq ($(skip-makefile),)
